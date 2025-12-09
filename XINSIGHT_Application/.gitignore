@@ -1,0 +1,15 @@
+build/
+xinsight_env/
+__pycache__/
+*.pyc
+*.exe
+*.csv
+*.xlsx
+*.db
+dist/
+*.log
+.vscode/
+*.pkl
+XINSIGHT_Application/xinsight_db.db
+*.db.wal
+dataset_files/

@@ -1,0 +1,13 @@
+build/
+xinsight_env/
+__pycache__/
+*.exe
+*.db
+*.pyc
+*.csv
+*.xlsx
+*.dll
+XINSIGHT_pre_obf/
+pyarmor.bug.log
+obfuscated_code/
+pyarmor_runtime_*/

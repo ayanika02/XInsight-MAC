@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDEAS XInsight - Loading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        
+        .splash-container {
+            text-align: center;
+            animation: fadeIn 0.8s ease-in;
+        }
+        
+        .logo-container {
+            margin-bottom: 2rem;
+        }
+        
+        .splash-gif {
+            max-width: 500px;
+            width: 80%;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(255, 75, 75, 0.3);
+        }
+        
+        .title {
+            color: #ffffff;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            color: #b0b0b0;
+            font-size: 1.3rem;
+            margin-bottom: 2.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .loading-bar {
+            width: 400px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 2rem auto;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4b4b 0%, #ff6b6b 100%);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 20px rgba(255, 75, 75, 0.6);
+        }
+        
+        .loading-text {
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .progress-percentage {
+            color: #ff6b6b;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.8s ease-out forwards;
+        }
+        
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-container" id="splashContainer">
+        
+        
+        <img src="xinsight_small.gif" alt="Loading Animation" class="splash-gif">
+        
+        <h1 class="title">IDEAS XInsight</h1>
+        <p class="subtitle">Explainable Visual Insights</p>
+        <p class="subtitle">Funded by DST, Govt. of India</p> 
+        
+        <div class="loading-bar">
+            <div class="loading-progress" id="progressBar"></div>
+        </div>
+        
+        <p class="progress-percentage" id="progressPercent">0%</p>
+        <p class="loading-text" id="loadingText">Initializing application...</p>
+    </div>
+    
+    <script>
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const loadingTextElement = document.getElementById('loadingText');
+        
+        const MINIMUM_SPLASH_TIME = 6000; // 6 seconds minimum
+        const startTime = Date.now();
+        let streamlitReady = false;
+        let attempts = 0;
+        
+        // Loading messages with timing
+        const loadingStages = [
+            { time: 0, text: "Initializing application...", progress: 0 },
+            { time: 1000, text: "Loading core modules...", progress: 20 },
+            { time: 2000, text: "Setting up environment...", progress: 40 },
+            { time: 3000, text: "Starting Streamlit server...", progress: 60 },
+            { time: 4000, text: "Preparing interface...", progress: 80 },
+            { time: 5000, text: "Almost ready...", progress: 95 }
+        ];
+        
+        let currentStage = 0;
+        
+        // Smooth progress animation
+        function updateStage() {
+            if (currentStage < loadingStages.length) {
+                const stage = loadingStages[currentStage];
+                loadingTextElement.textContent = stage.text;
+                progressBar.style.width = stage.progress + '%';
+                progressPercent.textContent = stage.progress + '%';
+                currentStage++;
+                
+                if (currentStage < loadingStages.length) {
+                    const nextStage = loadingStages[currentStage];
+                    const delay = nextStage.time - stage.time;
+                    setTimeout(updateStage, delay);
+                }
+            }
+        }
+        
+        // Start the staged loading animation
+        updateStage();
+        
+        // Check if Streamlit is ready
+        const checkStreamlit = setInterval(async () => {
+            attempts++;
+            
+            try {
+                const response = await fetch('http://localhost:8502/_stcore/health', {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+                
+                streamlitReady = true;
+                checkMinimumTime();
+                
+            } catch (error) {
+                // Streamlit not ready yet
+                // After 8 seconds, assume it's ready (server might be blocking health check)
+                if (attempts >= 8) {
+                    streamlitReady = true;
+                    checkMinimumTime();
+                }
+            }
+        }, 1000);
+        
+        function checkMinimumTime() {
+            const elapsedTime = Date.now() - startTime;
+            
+            if (streamlitReady && elapsedTime >= MINIMUM_SPLASH_TIME) {
+                // Both conditions met - redirect now
+                redirect();
+            } else if (streamlitReady) {
+                // Streamlit ready but minimum time not elapsed - wait
+                const remainingTime = MINIMUM_SPLASH_TIME - elapsedTime;
+                setTimeout(redirect, remainingTime);
+            }
+        }
+        
+        function redirect() {
+            clearInterval(checkStreamlit);
+            
+            // Complete the progress
+            progressBar.style.width = '100%';
+            progressPercent.textContent = '100%';
+            loadingTextElement.textContent = 'Ready! Launching application...';
+            
+            // Fade out and redirect
+            setTimeout(() => {
+                document.getElementById('splashContainer').classList.add('fade-out');
+                
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:8502';
+                }, 800);
+            }, 500);
+        }
+        
+        // Fallback: Force redirect after 15 seconds no matter what
+        setTimeout(() => {
+            if (!streamlitReady) {
+                console.log('Forcing redirect after timeout');
+                redirect();
+            }
+        }, 15000);
+    </script>
+</body>
+</html>
