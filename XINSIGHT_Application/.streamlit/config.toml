@@ -19,6 +19,7 @@
 # Default: true
 # showWarningOnDirectExecution = true
 
+developmentMode = false
 
 [logger]
 
@@ -80,7 +81,7 @@ toolbarMode = "minimal"
 # Python code to write it to the app.
 
 # Default: true
-# magicEnabled = true
+magicEnabled = true
 
 # Handle script rerun requests immediately, rather than waiting for script
 # execution to reach a yield point. This makes Streamlit much more
@@ -89,7 +90,7 @@ toolbarMode = "minimal"
 # assignment statements.
 
 # Default: true
-# fastReruns = true
+fastReruns = true
 
 # Raise an exception after adding unserializable data to Session State.
 # Some execution environments may require serializing all data in Session
@@ -153,7 +154,7 @@ headless = false
 # Automatically rerun script when the file is modified on disk.
 
 # Default: false
-# runOnSave = false
+runOnSave = false
 
 # The address where the server will listen for client and browser
 # connections. Use this if you want to bind the server to a specific address.
@@ -209,7 +210,7 @@ maxMessageSize = 2000
 # Enable serving files from a `static` directory in the running app's directory.
 
 # Default: false
-enableStaticServing = true
+enableStaticServing = false
 
 # Server certificate file for connecting via HTTPS.
 # Must be set at the same time as "server.sslKeyFile".
@@ -235,7 +236,7 @@ enableStaticServing = true
 # - Open the browser
 
 # Default: "localhost"
-# serverAddress = "localhost"
+serverAddress = "localhost"
 
 # Whether to send usage statistics to Streamlit.
 
@@ -286,16 +287,16 @@ backgroundColor = "#f4f3ed"
 
 # Color used for almost all text.
 textColor = "#3d3a2a"
-linkColor = "3d3a2a"
-borderColor = "#d3d2ca"
-showWidgetBorder = true
-baseRadius = "0.6rem"
+# linkColor = "3d3a2a"
+# borderColor = "#d3d2ca"
+# showWidgetBorder = true
+# baseRadius = "0.6rem"
 # font = "Inter:https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
 # codeFont = "Fira Code:https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap"
-codeBackgroundColor = "#ecebe4"
-showSidebarBorder = true
-headingFontSizes = ["40px", "32px", "24px"]
-headingFontWeights = 500
+# codeBackgroundColor = "#ecebe4"
+# showSidebarBorder = true
+# headingFontSizes = ["40px", "32px", "24px"]
+# headingFontWeights = 500
 
 # [theme.sidebar]
 # backgroundColor = "#e8e7dd"

@@ -1,0 +1,453 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 600px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "gray", "id": 0, "label": "date: 2013-01-26", "shape": "dot", "title": "http://example.com/date/2013-01-26"}, {"color": "#1d3e40", "id": 1, "label": "12.666666666666666", "shape": "dot", "title": "12.666666666666666"}, {"color": "gray", "id": 2, "label": "date: 2013-01-30", "shape": "dot", "title": "http://example.com/date/2013-01-30"}, {"color": "#1d3e40", "id": 3, "label": "14.714285714285714", "shape": "dot", "title": "14.714285714285714"}, {"color": "gray", "id": 4, "label": "date: 2013-03-12", "shape": "dot", "title": "http://example.com/date/2013-03-12"}, {"color": "#1d3e40", "id": 5, "label": "23.5", "shape": "dot", "title": "23.5"}, {"color": "gray", "id": 6, "label": "date: 2013-01-28", "shape": "dot", "title": "http://example.com/date/2013-01-28"}, {"color": "#66469d", "id": 7, "label": "56.0", "shape": "dot", "title": "56.0"}, {"color": "gray", "id": 8, "label": "date: 2013-03-09", "shape": "dot", "title": "http://example.com/date/2013-03-09"}, {"color": "#1d3e40", "id": 9, "label": "25.428571428571427", "shape": "dot", "title": "25.428571428571427"}, {"color": "gray", "id": 10, "label": "date: 2013-02-22", "shape": "dot", "title": "http://example.com/date/2013-02-22"}, {"color": "#74806f", "id": 11, "label": "1016.0", "shape": "dot", "title": "1016.0"}, {"color": "gray", "id": 12, "label": "date: 2013-02-11", "shape": "dot", "title": "http://example.com/date/2013-02-11"}, {"color": "#1d3e40", "id": 13, "label": "15.875", "shape": "dot", "title": "15.875"}, {"color": "gray", "id": 14, "label": "date: 2013-03-08", "shape": "dot", "title": "http://example.com/date/2013-03-08"}, {"color": "#66469d", "id": 15, "label": "44.833333333333336", "shape": "dot", "title": "44.833333333333336"}, {"color": "gray", "id": 16, "label": "date: 2013-02-20", "shape": "dot", "title": "http://example.com/date/2013-02-20"}, {"color": "#66469d", "id": 17, "label": "74.71428571428571", "shape": "dot", "title": "74.71428571428571"}, {"color": "gray", "id": 18, "label": "date: 2013-03-02", "shape": "dot", "title": "http://example.com/date/2013-03-02"}, {"color": "#88ce04", "id": 19, "label": "15.725", "shape": "dot", "title": "15.725"}, {"color": "gray", "id": 20, "label": "date: 2013-02-19", "shape": "dot", "title": "http://example.com/date/2013-02-19"}, {"color": "#74806f", "id": 21, "label": "1015.7142857142856", "shape": "dot", "title": "1015.7142857142856"}, {"color": "gray", "id": 22, "label": "date: 2013-02-27", "shape": "dot", "title": "http://example.com/date/2013-02-27"}, {"color": "#88ce04", "id": 23, "label": "6.660000000000001", "shape": "dot", "title": "6.660000000000001"}, {"color": "gray", "id": 24, "label": "date: 2013-02-07", "shape": "dot", "title": "http://example.com/date/2013-02-07"}, {"color": "#88ce04", "id": 25, "label": "10.74", "shape": "dot", "title": "10.74"}, {"color": "gray", "id": 26, "label": "date: 2013-02-09", "shape": "dot", "title": "http://example.com/date/2013-02-09"}, {"color": "#88ce04", "id": 27, "label": "9.257142857142856", "shape": "dot", "title": "9.257142857142856"}, {"color": "gray", "id": 28, "label": "date: 2013-03-14", "shape": "dot", "title": "http://example.com/date/2013-03-14"}, {"color": "#1d3e40", "id": 29, "label": "22.33333333333333", "shape": "dot", "title": "22.33333333333333"}, {"color": "gray", "id": 30, "label": "date: 2013-02-04", "shape": "dot", "title": "http://example.com/date/2013-02-04"}, {"color": "#1d3e40", "id": 31, "label": "17.428571428571427", "shape": "dot", "title": "17.428571428571427"}, {"color": "gray", "id": 32, "label": "date: 2013-01-29", "shape": "dot", "title": "http://example.com/date/2013-01-29"}, {"color": "#74806f", "id": 33, "label": "1016.625", "shape": "dot", "title": "1016.625"}, {"color": "gray", "id": 34, "label": "date: 2013-02-23", "shape": "dot", "title": "http://example.com/date/2013-02-23"}, {"color": "#74806f", "id": 35, "label": "1011.5", "shape": "dot", "title": "1011.5"}, {"color": "gray", "id": 36, "label": "date: 2013-03-03", "shape": "dot", "title": "http://example.com/date/2013-03-03"}, {"color": "#66469d", "id": 37, "label": "62.833333333333336", "shape": "dot", "title": "62.833333333333336"}, {"color": "gray", "id": 38, "label": "date: 2013-02-12", "shape": "dot", "title": "http://example.com/date/2013-02-12"}, {"color": "#74806f", "id": 39, "label": "1017.5", "shape": "dot", "title": "1017.5"}, {"color": "gray", "id": 40, "label": "date: 2013-02-18", "shape": "dot", "title": "http://example.com/date/2013-02-18"}, {"color": "#88ce04", "id": 41, "label": "12.220000000000002", "shape": "dot", "title": "12.220000000000002"}, {"color": "gray", "id": 42, "label": "date: 2013-03-11", "shape": "dot", "title": "http://example.com/date/2013-03-11"}, {"color": "#66469d", "id": 43, "label": "66.33333333333333", "shape": "dot", "title": "66.33333333333333"}, {"color": "gray", "id": 44, "label": "date: 2013-03-04", "shape": "dot", "title": "http://example.com/date/2013-03-04"}, {"color": "#66469d", "id": 45, "label": "71.0", "shape": "dot", "title": "71.0"}, {"color": "gray", "id": 46, "label": "date: 2013-03-13", "shape": "dot", "title": "http://example.com/date/2013-03-13"}, {"color": "#74806f", "id": 47, "label": "1009.0", "shape": "dot", "title": "1009.0"}, {"color": "gray", "id": 48, "label": "date: 2013-01-31", "shape": "dot", "title": "http://example.com/date/2013-01-31"}, {"color": "#74806f", "id": 49, "label": "1018.4", "shape": "dot", "title": "1018.4"}, {"color": "gray", "id": 50, "label": "date: 2013-02-03", "shape": "dot", "title": "http://example.com/date/2013-02-03"}, {"color": "#1d3e40", "id": 51, "label": "18.0", "shape": "dot", "title": "18.0"}, {"color": "#88ce04", "id": 52, "label": "11.114285714285714", "shape": "dot", "title": "11.114285714285714"}, {"color": "#88ce04", "id": 53, "label": "7.1000000000000005", "shape": "dot", "title": "7.1000000000000005"}, {"color": "#66469d", "id": 54, "label": "78.4", "shape": "dot", "title": "78.4"}, {"color": "gray", "id": 55, "label": "date: 2013-02-24", "shape": "dot", "title": "http://example.com/date/2013-02-24"}, {"color": "#88ce04", "id": 56, "label": "7.400000000000001", "shape": "dot", "title": "7.400000000000001"}, {"color": "#88ce04", "id": 57, "label": "4.933333333333334", "shape": "dot", "title": "4.933333333333334"}, {"color": "#1d3e40", "id": 58, "label": "17.714285714285715", "shape": "dot", "title": "17.714285714285715"}, {"color": "gray", "id": 59, "label": "date: 2013-03-16", "shape": "dot", "title": "http://example.com/date/2013-03-16"}, {"color": "#74806f", "id": 60, "label": "1016.1666666666666", "shape": "dot", "title": "1016.1666666666666"}, {"color": "#1d3e40", "id": 61, "label": "19.33333333333333", "shape": "dot", "title": "19.33333333333333"}, {"color": "gray", "id": 62, "label": "date: 2013-03-05", "shape": "dot", "title": "http://example.com/date/2013-03-05"}, {"color": "#74806f", "id": 63, "label": "1016.375", "shape": "dot", "title": "1016.375"}, {"color": "gray", "id": 64, "label": "date: 2013-02-13", "shape": "dot", "title": "http://example.com/date/2013-02-13"}, {"color": "#1d3e40", "id": 65, "label": "16.285714285714285", "shape": "dot", "title": "16.285714285714285"}, {"color": "#88ce04", "id": 66, "label": "6.085714285714287", "shape": "dot", "title": "6.085714285714287"}, {"color": "gray", "id": 67, "label": "date: 2013-02-14", "shape": "dot", "title": "http://example.com/date/2013-02-14"}, {"color": "#88ce04", "id": 68, "label": "4.333333333333333", "shape": "dot", "title": "4.333333333333333"}, {"color": "#1d3e40", "id": 69, "label": "15.6", "shape": "dot", "title": "15.6"}, {"color": "#1d3e40", "id": 70, "label": "16.2", "shape": "dot", "title": "16.2"}, {"color": "gray", "id": 71, "label": "date: 2013-03-01", "shape": "dot", "title": "http://example.com/date/2013-03-01"}, {"color": "#1d3e40", "id": 72, "label": "17.333333333333332", "shape": "dot", "title": "17.333333333333332"}, {"color": "gray", "id": 73, "label": "date: 2013-02-05", "shape": "dot", "title": "http://example.com/date/2013-02-05"}, {"color": "#66469d", "id": 74, "label": "92.375", "shape": "dot", "title": "92.375"}, {"color": "#74806f", "id": 75, "label": "1015.8", "shape": "dot", "title": "1015.8"}, {"color": "gray", "id": 76, "label": "date: 2013-02-10", "shape": "dot", "title": "http://example.com/date/2013-02-10"}, {"color": "#66469d", "id": 77, "label": "71.5", "shape": "dot", "title": "71.5"}, {"color": "#66469d", "id": 78, "label": "70.14285714285714", "shape": "dot", "title": "70.14285714285714"}, {"color": "gray", "id": 79, "label": "date: 2013-02-21", "shape": "dot", "title": "http://example.com/date/2013-02-21"}, {"color": "#1d3e40", "id": 80, "label": "20.0", "shape": "dot", "title": "20.0"}, {"color": "#74806f", "id": 81, "label": "1019.6666666666666", "shape": "dot", "title": "1019.6666666666666"}, {"color": "#74806f", "id": 82, "label": "1017.8333333333334", "shape": "dot", "title": "1017.8333333333334"}, {"color": "#74806f", "id": 83, "label": "1017.0", "shape": "dot", "title": "1017.0"}, {"color": "gray", "id": 84, "label": "date: 2013-03-06", "shape": "dot", "title": "http://example.com/date/2013-03-06"}, {"color": "#88ce04", "id": 85, "label": "6.800000000000001", "shape": "dot", "title": "6.800000000000001"}, {"color": "#66469d", "id": 86, "label": "49.333333333333336", "shape": "dot", "title": "49.333333333333336"}, {"color": "gray", "id": 87, "label": "date: 2013-02-06", "shape": "dot", "title": "http://example.com/date/2013-02-06"}, {"color": "#88ce04", "id": 88, "label": "8.633333333333333", "shape": "dot", "title": "8.633333333333333"}, {"color": "#88ce04", "id": 89, "label": "6.614285714285714", "shape": "dot", "title": "6.614285714285714"}, {"color": "gray", "id": 90, "label": "date: 2013-02-26", "shape": "dot", "title": "http://example.com/date/2013-02-26"}, {"color": "#74806f", "id": 91, "label": "1015.1428571428572", "shape": "dot", "title": "1015.1428571428572"}, {"color": "gray", "id": 92, "label": "date: 2013-02-08", "shape": "dot", "title": "http://example.com/date/2013-02-08"}, {"color": "#74806f", "id": 93, "label": "1017.1428571428572", "shape": "dot", "title": "1017.1428571428572"}, {"color": "gray", "id": 94, "label": "date: 2013-02-15", "shape": "dot", "title": "http://example.com/date/2013-02-15"}, {"color": "#88ce04", "id": 95, "label": "10.183333333333335", "shape": "dot", "title": "10.183333333333335"}, {"color": "#1d3e40", "id": 96, "label": "20.8", "shape": "dot", "title": "20.8"}, {"color": "#66469d", "id": 97, "label": "70.5", "shape": "dot", "title": "70.5"}, {"color": "#1d3e40", "id": 98, "label": "24.0", "shape": "dot", "title": "24.0"}, {"color": "gray", "id": 99, "label": "date: 2013-01-27", "shape": "dot", "title": "http://example.com/date/2013-01-27"}, {"color": "#66469d", "id": 100, "label": "65.57142857142857", "shape": "dot", "title": "65.57142857142857"}, {"color": "gray", "id": 101, "label": "date: 2013-03-15", "shape": "dot", "title": "http://example.com/date/2013-03-15"}, {"color": "gray", "id": 102, "label": "date: 2013-02-01", "shape": "dot", "title": "http://example.com/date/2013-02-01"}, {"color": "#1d3e40", "id": 103, "label": "16.0", "shape": "dot", "title": "16.0"}, {"color": "gray", "id": 104, "label": "date: 2013-02-16", "shape": "dot", "title": "http://example.com/date/2013-02-16"}, {"color": "#66469d", "id": 105, "label": "92.71428571428572", "shape": "dot", "title": "92.71428571428572"}, {"color": "#66469d", "id": 106, "label": "49.71428571428572", "shape": "dot", "title": "49.71428571428572"}, {"color": "gray", "id": 107, "label": "date: 2013-03-07", "shape": "dot", "title": "http://example.com/date/2013-03-07"}, {"color": "#1d3e40", "id": 108, "label": "23.428571428571427", "shape": "dot", "title": "23.428571428571427"}, {"color": "#88ce04", "id": 109, "label": "8.728571428571428", "shape": "dot", "title": "8.728571428571428"}, {"color": "#88ce04", "id": 110, "label": "1.8571428571428568", "shape": "dot", "title": "1.8571428571428568"}, {"color": "#1d3e40", "id": 111, "label": "16.666666666666668", "shape": "dot", "title": "16.666666666666668"}, {"color": "#66469d", "id": 112, "label": "62.5", "shape": "dot", "title": "62.5"}, {"color": "#66469d", "id": 113, "label": "78.85714285714286", "shape": "dot", "title": "78.85714285714286"}, {"color": "#66469d", "id": 114, "label": "74.28571428571429", "shape": "dot", "title": "74.28571428571429"}, {"color": "#74806f", "id": 115, "label": "1015.4285714285714", "shape": "dot", "title": "1015.4285714285714"}, {"color": "gray", "id": 116, "label": "date: 2013-02-28", "shape": "dot", "title": "http://example.com/date/2013-02-28"}, {"color": "#1d3e40", "id": 117, "label": "19.428571428571427", "shape": "dot", "title": "19.428571428571427"}, {"color": "#1d3e40", "id": 118, "label": "21.5", "shape": "dot", "title": "21.5"}, {"color": "#66469d", "id": 119, "label": "65.6", "shape": "dot", "title": "65.6"}, {"color": "#74806f", "id": 120, "label": "1016.2", "shape": "dot", "title": "1016.2"}, {"color": "gray", "id": 121, "label": "date: 2013-02-17", "shape": "dot", "title": "http://example.com/date/2013-02-17"}, {"color": "#88ce04", "id": 122, "label": "0.0", "shape": "dot", "title": "0.0"}, {"color": "#74806f", "id": 123, "label": "1009.2857142857144", "shape": "dot", "title": "1009.2857142857144"}, {"color": "#74806f", "id": 124, "label": "1016.8571428571428", "shape": "dot", "title": "1016.8571428571428"}, {"color": "#88ce04", "id": 125, "label": "6.871428571428573", "shape": "dot", "title": "6.871428571428573"}, {"color": "gray", "id": 126, "label": "date: 2013-02-25", "shape": "dot", "title": "http://example.com/date/2013-02-25"}, {"color": "#74806f", "id": 127, "label": "1018.25", "shape": "dot", "title": "1018.25"}, {"color": "#88ce04", "id": 128, "label": "12.033333333333331", "shape": "dot", "title": "12.033333333333331"}, {"color": "#88ce04", "id": 129, "label": "2.96", "shape": "dot", "title": "2.96"}, {"color": "#1d3e40", "id": 130, "label": "20.33333333333333", "shape": "dot", "title": "20.33333333333333"}, {"color": "#88ce04", "id": 131, "label": "24.066666666666663", "shape": "dot", "title": "24.066666666666663"}, {"color": "#1d3e40", "id": 132, "label": "20.875", "shape": "dot", "title": "20.875"}, {"color": "#88ce04", "id": 133, "label": "5.285714285714286", "shape": "dot", "title": "5.285714285714286"}, {"color": "gray", "id": 134, "label": "date: 2013-03-10", "shape": "dot", "title": "http://example.com/date/2013-03-10"}, {"color": "#1d3e40", "id": 135, "label": "23.142857142857142", "shape": "dot", "title": "23.142857142857142"}, {"color": "#66469d", "id": 136, "label": "70.42857142857143", "shape": "dot", "title": "70.42857142857143"}, {"color": "#66469d", "id": 137, "label": "74.85714285714286", "shape": "dot", "title": "74.85714285714286"}, {"color": "#66469d", "id": 138, "label": "67.28571428571429", "shape": "dot", "title": "67.28571428571429"}, {"color": "#88ce04", "id": 139, "label": "3.7", "shape": "dot", "title": "3.7"}, {"color": "#1d3e40", "id": 140, "label": "15.857142857142858", "shape": "dot", "title": "15.857142857142858"}, {"color": "#74806f", "id": 141, "label": "1011.6666666666666", "shape": "dot", "title": "1011.6666666666666"}, {"color": "#66469d", "id": 142, "label": "65.625", "shape": "dot", "title": "65.625"}, {"color": "#88ce04", "id": 143, "label": "17.587500000000002", "shape": "dot", "title": "17.587500000000002"}, {"color": "#1d3e40", "id": 144, "label": "16.857142857142858", "shape": "dot", "title": "16.857142857142858"}, {"color": "#1d3e40", "id": 145, "label": "19.0", "shape": "dot", "title": "19.0"}, {"color": "#1d3e40", "id": 146, "label": "16.875", "shape": "dot", "title": "16.875"}, {"color": "#88ce04", "id": 147, "label": "3.475", "shape": "dot", "title": "3.475"}, {"color": "#74806f", "id": 148, "label": "1015.2", "shape": "dot", "title": "1015.2"}, {"color": "gray", "id": 149, "label": "date: 2013-02-02", "shape": "dot", "title": "http://example.com/date/2013-02-02"}, {"color": "#88ce04", "id": 150, "label": "1.3285714285714287", "shape": "dot", "title": "1.3285714285714287"}, {"color": "#66469d", "id": 151, "label": "65.28571428571429", "shape": "dot", "title": "65.28571428571429"}, {"color": "#66469d", "id": 152, "label": "52.85714285714285", "shape": "dot", "title": "52.85714285714285"}, {"color": "#66469d", "id": 153, "label": "61.285714285714285", "shape": "dot", "title": "61.285714285714285"}, {"color": "#66469d", "id": 154, "label": "59.4", "shape": "dot", "title": "59.4"}, {"color": "#74806f", "id": 155, "label": "1016.25", "shape": "dot", "title": "1016.25"}, {"color": "#1d3e40", "id": 156, "label": "24.166666666666668", "shape": "dot", "title": "24.166666666666668"}, {"color": "#66469d", "id": 157, "label": "57.57142857142857", "shape": "dot", "title": "57.57142857142857"}, {"color": "#88ce04", "id": 158, "label": "4.1625000000000005", "shape": "dot", "title": "4.1625000000000005"}, {"color": "#74806f", "id": 159, "label": "1015.2857142857144", "shape": "dot", "title": "1015.2857142857144"}, {"color": "#1d3e40", "id": 160, "label": "15.25", "shape": "dot", "title": "15.25"}, {"color": "#1d3e40", "id": 161, "label": "16.625", "shape": "dot", "title": "16.625"}, {"color": "#1d3e40", "id": 162, "label": "19.166666666666668", "shape": "dot", "title": "19.166666666666668"}, {"color": "#74806f", "id": 163, "label": "1008.0", "shape": "dot", "title": "1008.0"}, {"color": "#66469d", "id": 164, "label": "82.0", "shape": "dot", "title": "82.0"}, {"color": "#88ce04", "id": 165, "label": "5.5600000000000005", "shape": "dot", "title": "5.5600000000000005"}, {"color": "#74806f", "id": 166, "label": "1014.8333333333334", "shape": "dot", "title": "1014.8333333333334"}, {"color": "#1d3e40", "id": 167, "label": "14.833333333333334", "shape": "dot", "title": "14.833333333333334"}, {"color": "#74806f", "id": 168, "label": "1017.8571428571428", "shape": "dot", "title": "1017.8571428571428"}, {"color": "#74806f", "id": 169, "label": "1013.1666666666666", "shape": "dot", "title": "1013.1666666666666"}, {"color": "#1d3e40", "id": 170, "label": "20.857142857142858", "shape": "dot", "title": "20.857142857142858"}, {"color": "#74806f", "id": 171, "label": "1018.8571428571428", "shape": "dot", "title": "1018.8571428571428"}, {"color": "#66469d", "id": 172, "label": "57.2", "shape": "dot", "title": "57.2"}, {"color": "#66469d", "id": 173, "label": "72.875", "shape": "dot", "title": "72.875"}, {"color": "#66469d", "id": 174, "label": "67.66666666666667", "shape": "dot", "title": "67.66666666666667"}, {"color": "#88ce04", "id": 175, "label": "2.22", "shape": "dot", "title": "2.22"}, {"color": "#74806f", "id": 176, "label": "1012.6666666666666", "shape": "dot", "title": "1012.6666666666666"}, {"color": "#88ce04", "id": 177, "label": "8.485714285714286", "shape": "dot", "title": "8.485714285714286"}, {"color": "#88ce04", "id": 178, "label": "5.557142857142857", "shape": "dot", "title": "5.557142857142857"}, {"color": "#74806f", "id": 179, "label": "1018.6", "shape": "dot", "title": "1018.6"}, {"color": "#66469d", "id": 180, "label": "90.0", "shape": "dot", "title": "90.0"}, {"color": "#88ce04", "id": 181, "label": "1.0571428571428572", "shape": "dot", "title": "1.0571428571428572"}, {"color": "#88ce04", "id": 182, "label": "12.957142857142856", "shape": "dot", "title": "12.957142857142856"}, {"color": "#1d3e40", "id": 183, "label": "14.125", "shape": "dot", "title": "14.125"}, {"color": "#1d3e40", "id": 184, "label": "15.333333333333334", "shape": "dot", "title": "15.333333333333334"}, {"color": "#74806f", "id": 185, "label": "1018.6666666666666", "shape": "dot", "title": "1018.6666666666666"}, {"color": "#88ce04", "id": 186, "label": "5.325", "shape": "dot", "title": "5.325"}, {"color": "#74806f", "id": 187, "label": "1014.1666666666666", "shape": "dot", "title": "1014.1666666666666"}, {"color": "#74806f", "id": 188, "label": "1018.1428571428572", "shape": "dot", "title": "1018.1428571428572"}, {"color": "#74806f", "id": 189, "label": "1017.4285714285714", "shape": "dot", "title": "1017.4285714285714"}, {"color": "#1d3e40", "id": 190, "label": "17.6", "shape": "dot", "title": "17.6"}, {"color": "#74806f", "id": 191, "label": "1011.1666666666666", "shape": "dot", "title": "1011.1666666666666"}, {"color": "#88ce04", "id": 192, "label": "4.6375", "shape": "dot", "title": "4.6375"}, {"color": "#1d3e40", "id": 193, "label": "20.5", "shape": "dot", "title": "20.5"}, {"color": "#1d3e40", "id": 194, "label": "13.666666666666666", "shape": "dot", "title": "13.666666666666666"}, {"color": "#88ce04", "id": 195, "label": "0.9333333333333332", "shape": "dot", "title": "0.9333333333333332"}, {"color": "#1d3e40", "id": 196, "label": "12.857142857142858", "shape": "dot", "title": "12.857142857142858"}, {"color": "#88ce04", "id": 197, "label": "3.2375", "shape": "dot", "title": "3.2375"}, {"color": "#66469d", "id": 198, "label": "63.833333333333336", "shape": "dot", "title": "63.833333333333336"}, {"color": "#74806f", "id": 199, "label": "1016.5", "shape": "dot", "title": "1016.5"}, {"color": "#66469d", "id": 200, "label": "73.0", "shape": "dot", "title": "73.0"}, {"color": "#66469d", "id": 201, "label": "45.833333333333336", "shape": "dot", "title": "45.833333333333336"}, {"color": "#1d3e40", "id": 202, "label": "17.857142857142858", "shape": "dot", "title": "17.857142857142858"}, {"color": "#88ce04", "id": 203, "label": "4.228571428571429", "shape": "dot", "title": "4.228571428571429"}, {"color": "#66469d", "id": 204, "label": "64.16666666666667", "shape": "dot", "title": "64.16666666666667"}, {"color": "#88ce04", "id": 205, "label": "5.814285714285715", "shape": "dot", "title": "5.814285714285715"}, {"color": "#88ce04", "id": 206, "label": "5.55", "shape": "dot", "title": "5.55"}, {"color": "#66469d", "id": 207, "label": "61.875", "shape": "dot", "title": "61.875"}, {"color": "#74806f", "id": 208, "label": "1014.5714285714286", "shape": "dot", "title": "1014.5714285714286"}, {"color": "#66469d", "id": 209, "label": "71.33333333333333", "shape": "dot", "title": "71.33333333333333"}, {"color": "#74806f", "id": 210, "label": "1017.125", "shape": "dot", "title": "1017.125"}, {"color": "#88ce04", "id": 211, "label": "7.416666666666667", "shape": "dot", "title": "7.416666666666667"}, {"color": "#66469d", "id": 212, "label": "54.0", "shape": "dot", "title": "54.0"}, {"color": "#66469d", "id": 213, "label": "70.0", "shape": "dot", "title": "70.0"}, {"color": "#88ce04", "id": 214, "label": "10.875000000000002", "shape": "dot", "title": "10.875000000000002"}, {"color": "#1d3e40", "id": 215, "label": "14.0", "shape": "dot", "title": "14.0"}, {"color": "#66469d", "id": 216, "label": "77.57142857142857", "shape": "dot", "title": "77.57142857142857"}, {"color": "#66469d", "id": 217, "label": "61.16666666666666", "shape": "dot", "title": "61.16666666666666"}, {"color": "#66469d", "id": 218, "label": "65.5", "shape": "dot", "title": "65.5"}, {"color": "#88ce04", "id": 219, "label": "9.725", "shape": "dot", "title": "9.725"}, {"color": "#1d3e40", "id": 220, "label": "15.428571428571429", "shape": "dot", "title": "15.428571428571429"}, {"color": "#66469d", "id": 221, "label": "70.33333333333333", "shape": "dot", "title": "70.33333333333333"}, {"color": "#1d3e40", "id": 222, "label": "14.428571428571429", "shape": "dot", "title": "14.428571428571429"}, {"color": "#66469d", "id": 223, "label": "57.142857142857146", "shape": "dot", "title": "57.142857142857146"}, {"color": "#66469d", "id": 224, "label": "65.33333333333333", "shape": "dot", "title": "65.33333333333333"}, {"color": "#74806f", "id": 225, "label": "1016.3333333333334", "shape": "dot", "title": "1016.3333333333334"}, {"color": "#88ce04", "id": 226, "label": "7.716666666666668", "shape": "dot", "title": "7.716666666666668"}]);
+                  edges = new vis.DataSet([{"from": 0, "label": "meantemp", "title": "http://example.com/date/2013-01-26 meantemp 12.666666666666666", "to": 1}, {"from": 2, "label": "meantemp", "title": "http://example.com/date/2013-01-30 meantemp 14.714285714285714", "to": 3}, {"from": 4, "label": "meantemp", "title": "http://example.com/date/2013-03-12 meantemp 23.5", "to": 5}, {"from": 6, "label": "humidity", "title": "http://example.com/date/2013-01-28 humidity 56.0", "to": 7}, {"from": 8, "label": "meantemp", "title": "http://example.com/date/2013-03-09 meantemp 25.428571428571427", "to": 9}, {"from": 10, "label": "meanpressure", "title": "http://example.com/date/2013-02-22 meanpressure 1016.0", "to": 11}, {"from": 12, "label": "meantemp", "title": "http://example.com/date/2013-02-11 meantemp 15.875", "to": 13}, {"from": 14, "label": "humidity", "title": "http://example.com/date/2013-03-08 humidity 44.833333333333336", "to": 15}, {"from": 16, "label": "humidity", "title": "http://example.com/date/2013-02-20 humidity 74.71428571428571", "to": 17}, {"from": 18, "label": "wind_speed", "title": "http://example.com/date/2013-03-02 wind_speed 15.725", "to": 19}, {"from": 20, "label": "meanpressure", "title": "http://example.com/date/2013-02-19 meanpressure 1015.7142857142856", "to": 21}, {"from": 22, "label": "wind_speed", "title": "http://example.com/date/2013-02-27 wind_speed 6.660000000000001", "to": 23}, {"from": 24, "label": "wind_speed", "title": "http://example.com/date/2013-02-07 wind_speed 10.74", "to": 25}, {"from": 26, "label": "wind_speed", "title": "http://example.com/date/2013-02-09 wind_speed 9.257142857142856", "to": 27}, {"from": 28, "label": "meantemp", "title": "http://example.com/date/2013-03-14 meantemp 22.33333333333333", "to": 29}, {"from": 30, "label": "meantemp", "title": "http://example.com/date/2013-02-04 meantemp 17.428571428571427", "to": 31}, {"from": 32, "label": "meanpressure", "title": "http://example.com/date/2013-01-29 meanpressure 1016.625", "to": 33}, {"from": 34, "label": "wind_speed", "title": "http://example.com/date/2013-02-23 wind_speed 9.257142857142856", "to": 27}, {"from": 4, "label": "meanpressure", "title": "http://example.com/date/2013-03-12 meanpressure 1011.5", "to": 35}, {"from": 36, "label": "humidity", "title": "http://example.com/date/2013-03-03 humidity 62.833333333333336", "to": 37}, {"from": 38, "label": "meanpressure", "title": "http://example.com/date/2013-02-12 meanpressure 1017.5", "to": 39}, {"from": 40, "label": "wind_speed", "title": "http://example.com/date/2013-02-18 wind_speed 12.220000000000002", "to": 41}, {"from": 42, "label": "humidity", "title": "http://example.com/date/2013-03-11 humidity 66.33333333333333", "to": 43}, {"from": 44, "label": "humidity", "title": "http://example.com/date/2013-03-04 humidity 71.0", "to": 45}, {"from": 46, "label": "meanpressure", "title": "http://example.com/date/2013-03-13 meanpressure 1009.0", "to": 47}, {"from": 48, "label": "meanpressure", "title": "http://example.com/date/2013-01-31 meanpressure 1018.4", "to": 49}, {"from": 50, "label": "meantemp", "title": "http://example.com/date/2013-02-03 meantemp 18.0", "to": 51}, {"from": 30, "label": "wind_speed", "title": "http://example.com/date/2013-02-04 wind_speed 11.114285714285714", "to": 52}, {"from": 14, "label": "wind_speed", "title": "http://example.com/date/2013-03-08 wind_speed 7.1000000000000005", "to": 53}, {"from": 40, "label": "humidity", "title": "http://example.com/date/2013-02-18 humidity 78.4", "to": 54}, {"from": 55, "label": "wind_speed", "title": "http://example.com/date/2013-02-24 wind_speed 7.400000000000001", "to": 56}, {"from": 4, "label": "wind_speed", "title": "http://example.com/date/2013-03-12 wind_speed 4.933333333333334", "to": 57}, {"from": 16, "label": "meantemp", "title": "http://example.com/date/2013-02-20 meantemp 17.714285714285715", "to": 58}, {"from": 59, "label": "meanpressure", "title": "http://example.com/date/2013-03-16 meanpressure 1016.1666666666666", "to": 60}, {"from": 36, "label": "meantemp", "title": "http://example.com/date/2013-03-03 meantemp 19.33333333333333", "to": 61}, {"from": 62, "label": "meanpressure", "title": "http://example.com/date/2013-03-05 meanpressure 1016.375", "to": 63}, {"from": 64, "label": "meantemp", "title": "http://example.com/date/2013-02-13 meantemp 16.285714285714285", "to": 65}, {"from": 64, "label": "wind_speed", "title": "http://example.com/date/2013-02-13 wind_speed 6.085714285714287", "to": 66}, {"from": 67, "label": "wind_speed", "title": "http://example.com/date/2013-02-14 wind_speed 4.333333333333333", "to": 68}, {"from": 40, "label": "meantemp", "title": "http://example.com/date/2013-02-18 meantemp 15.6", "to": 69}, {"from": 48, "label": "meantemp", "title": "http://example.com/date/2013-01-31 meantemp 16.2", "to": 70}, {"from": 71, "label": "meantemp", "title": "http://example.com/date/2013-03-01 meantemp 17.333333333333332", "to": 72}, {"from": 73, "label": "humidity", "title": "http://example.com/date/2013-02-05 humidity 92.375", "to": 74}, {"from": 44, "label": "meanpressure", "title": "http://example.com/date/2013-03-04 meanpressure 1015.8", "to": 75}, {"from": 76, "label": "humidity", "title": "http://example.com/date/2013-02-10 humidity 71.5", "to": 77}, {"from": 64, "label": "humidity", "title": "http://example.com/date/2013-02-13 humidity 70.14285714285714", "to": 78}, {"from": 79, "label": "meantemp", "title": "http://example.com/date/2013-02-21 meantemp 20.0", "to": 80}, {"from": 0, "label": "meanpressure", "title": "http://example.com/date/2013-01-26 meanpressure 1019.6666666666666", "to": 81}, {"from": 6, "label": "meanpressure", "title": "http://example.com/date/2013-01-28 meanpressure 1017.8333333333334", "to": 82}, {"from": 16, "label": "meanpressure", "title": "http://example.com/date/2013-02-20 meanpressure 1017.0", "to": 83}, {"from": 84, "label": "meanpressure", "title": "http://example.com/date/2013-03-06 meanpressure 1015.7142857142856", "to": 21}, {"from": 0, "label": "wind_speed", "title": "http://example.com/date/2013-01-26 wind_speed 6.800000000000001", "to": 85}, {"from": 71, "label": "humidity", "title": "http://example.com/date/2013-03-01 humidity 49.333333333333336", "to": 86}, {"from": 87, "label": "wind_speed", "title": "http://example.com/date/2013-02-06 wind_speed 8.633333333333333", "to": 88}, {"from": 79, "label": "wind_speed", "title": "http://example.com/date/2013-02-21 wind_speed 6.614285714285714", "to": 89}, {"from": 90, "label": "meanpressure", "title": "http://example.com/date/2013-02-26 meanpressure 1015.1428571428572", "to": 91}, {"from": 92, "label": "meanpressure", "title": "http://example.com/date/2013-02-08 meanpressure 1017.1428571428572", "to": 93}, {"from": 94, "label": "wind_speed", "title": "http://example.com/date/2013-02-15 wind_speed 10.183333333333335", "to": 95}, {"from": 22, "label": "meantemp", "title": "http://example.com/date/2013-02-27 meantemp 20.8", "to": 96}, {"from": 46, "label": "humidity", "title": "http://example.com/date/2013-03-13 humidity 70.5", "to": 97}, {"from": 42, "label": "meantemp", "title": "http://example.com/date/2013-03-11 meantemp 24.0", "to": 98}, {"from": 99, "label": "humidity", "title": "http://example.com/date/2013-01-27 humidity 65.57142857142857", "to": 100}, {"from": 101, "label": "meanpressure", "title": "http://example.com/date/2013-03-15 meanpressure 1016.1666666666666", "to": 60}, {"from": 102, "label": "meantemp", "title": "http://example.com/date/2013-02-01 meantemp 16.0", "to": 103}, {"from": 104, "label": "humidity", "title": "http://example.com/date/2013-02-16 humidity 92.71428571428572", "to": 105}, {"from": 8, "label": "humidity", "title": "http://example.com/date/2013-03-09 humidity 49.71428571428572", "to": 106}, {"from": 107, "label": "meantemp", "title": "http://example.com/date/2013-03-07 meantemp 23.428571428571427", "to": 108}, {"from": 107, "label": "wind_speed", "title": "http://example.com/date/2013-03-07 wind_speed 8.728571428571428", "to": 109}, {"from": 50, "label": "wind_speed", "title": "http://example.com/date/2013-02-03 wind_speed 1.8571428571428568", "to": 110}, {"from": 87, "label": "meantemp", "title": "http://example.com/date/2013-02-06 meantemp 16.666666666666668", "to": 111}, {"from": 4, "label": "humidity", "title": "http://example.com/date/2013-03-12 humidity 62.5", "to": 112}, {"from": 55, "label": "humidity", "title": "http://example.com/date/2013-02-24 humidity 78.85714285714286", "to": 113}, {"from": 30, "label": "humidity", "title": "http://example.com/date/2013-02-04 humidity 74.28571428571429", "to": 114}, {"from": 79, "label": "meanpressure", "title": "http://example.com/date/2013-02-21 meanpressure 1015.4285714285714", "to": 115}, {"from": 116, "label": "meantemp", "title": "http://example.com/date/2013-02-28 meantemp 19.428571428571427", "to": 117}, {"from": 46, "label": "meantemp", "title": "http://example.com/date/2013-03-13 meantemp 21.5", "to": 118}, {"from": 73, "label": "meanpressure", "title": "http://example.com/date/2013-02-05 meanpressure 1016.375", "to": 63}, {"from": 48, "label": "humidity", "title": "http://example.com/date/2013-01-31 humidity 65.6", "to": 119}, {"from": 40, "label": "meanpressure", "title": "http://example.com/date/2013-02-18 meanpressure 1016.2", "to": 120}, {"from": 92, "label": "wind_speed", "title": "http://example.com/date/2013-02-08 wind_speed 9.257142857142856", "to": 27}, {"from": 102, "label": "meanpressure", "title": "http://example.com/date/2013-02-01 meanpressure 1016.0", "to": 11}, {"from": 121, "label": "wind_speed", "title": "http://example.com/date/2013-02-17 wind_speed 0.0", "to": 122}, {"from": 8, "label": "meanpressure", "title": "http://example.com/date/2013-03-09 meanpressure 1009.2857142857144", "to": 123}, {"from": 26, "label": "meanpressure", "title": "http://example.com/date/2013-02-09 meanpressure 1016.8571428571428", "to": 124}, {"from": 36, "label": "wind_speed", "title": "http://example.com/date/2013-03-03 wind_speed 8.633333333333333", "to": 88}, {"from": 84, "label": "wind_speed", "title": "http://example.com/date/2013-03-06 wind_speed 6.871428571428573", "to": 125}, {"from": 126, "label": "meanpressure", "title": "http://example.com/date/2013-02-25 meanpressure 1018.25", "to": 127}, {"from": 28, "label": "wind_speed", "title": "http://example.com/date/2013-03-14 wind_speed 12.033333333333331", "to": 128}, {"from": 48, "label": "wind_speed", "title": "http://example.com/date/2013-01-31 wind_speed 2.96", "to": 129}, {"from": 59, "label": "meantemp", "title": "http://example.com/date/2013-03-16 meantemp 20.33333333333333", "to": 130}, {"from": 71, "label": "wind_speed", "title": "http://example.com/date/2013-03-01 wind_speed 24.066666666666663", "to": 131}, {"from": 62, "label": "meantemp", "title": "http://example.com/date/2013-03-05 meantemp 20.875", "to": 132}, {"from": 8, "label": "wind_speed", "title": "http://example.com/date/2013-03-09 wind_speed 5.285714285714286", "to": 133}, {"from": 134, "label": "meantemp", "title": "http://example.com/date/2013-03-10 meantemp 23.142857142857142", "to": 135}, {"from": 92, "label": "humidity", "title": "http://example.com/date/2013-02-08 humidity 70.42857142857143", "to": 136}, {"from": 34, "label": "humidity", "title": "http://example.com/date/2013-02-23 humidity 74.85714285714286", "to": 137}, {"from": 79, "label": "humidity", "title": "http://example.com/date/2013-02-21 humidity 67.28571428571429", "to": 138}, {"from": 59, "label": "wind_speed", "title": "http://example.com/date/2013-03-16 wind_speed 3.7", "to": 139}, {"from": 6, "label": "wind_speed", "title": "http://example.com/date/2013-01-28 wind_speed 3.7", "to": 139}, {"from": 20, "label": "meantemp", "title": "http://example.com/date/2013-02-19 meantemp 15.857142857142858", "to": 140}, {"from": 94, "label": "meanpressure", "title": "http://example.com/date/2013-02-15 meanpressure 1011.6666666666666", "to": 141}, {"from": 10, "label": "humidity", "title": "http://example.com/date/2013-02-22 humidity 65.625", "to": 142}, {"from": 90, "label": "wind_speed", "title": "http://example.com/date/2013-02-26 wind_speed 17.587500000000002", "to": 143}, {"from": 55, "label": "meantemp", "title": "http://example.com/date/2013-02-24 meantemp 16.857142857142858", "to": 144}, {"from": 18, "label": "meantemp", "title": "http://example.com/date/2013-03-02 meantemp 19.0", "to": 145}, {"from": 126, "label": "meantemp", "title": "http://example.com/date/2013-02-25 meantemp 16.875", "to": 146}, {"from": 76, "label": "wind_speed", "title": "http://example.com/date/2013-02-10 wind_speed 3.475", "to": 147}, {"from": 22, "label": "meanpressure", "title": "http://example.com/date/2013-02-27 meanpressure 1015.2", "to": 148}, {"from": 149, "label": "wind_speed", "title": "http://example.com/date/2013-02-02 wind_speed 1.3285714285714287", "to": 150}, {"from": 84, "label": "humidity", "title": "http://example.com/date/2013-03-06 humidity 65.28571428571429", "to": 151}, {"from": 116, "label": "humidity", "title": "http://example.com/date/2013-02-28 humidity 52.85714285714285", "to": 152}, {"from": 26, "label": "humidity", "title": "http://example.com/date/2013-02-09 humidity 61.285714285714285", "to": 153}, {"from": 24, "label": "humidity", "title": "http://example.com/date/2013-02-07 humidity 59.4", "to": 154}, {"from": 64, "label": "meanpressure", "title": "http://example.com/date/2013-02-13 meanpressure 1016.0", "to": 11}, {"from": 18, "label": "meanpressure", "title": "http://example.com/date/2013-03-02 meanpressure 1016.25", "to": 155}, {"from": 67, "label": "meantemp", "title": "http://example.com/date/2013-02-14 meantemp 17.333333333333332", "to": 72}, {"from": 14, "label": "meantemp", "title": "http://example.com/date/2013-03-08 meantemp 24.166666666666668", "to": 156}, {"from": 134, "label": "humidity", "title": "http://example.com/date/2013-03-10 humidity 57.57142857142857", "to": 157}, {"from": 62, "label": "wind_speed", "title": "http://example.com/date/2013-03-05 wind_speed 4.1625000000000005", "to": 158}, {"from": 50, "label": "meanpressure", "title": "http://example.com/date/2013-02-03 meanpressure 1015.2857142857144", "to": 159}, {"from": 76, "label": "meantemp", "title": "http://example.com/date/2013-02-10 meantemp 15.25", "to": 160}, {"from": 73, "label": "meantemp", "title": "http://example.com/date/2013-02-05 meantemp 16.625", "to": 161}, {"from": 94, "label": "meantemp", "title": "http://example.com/date/2013-02-15 meantemp 19.166666666666668", "to": 162}, {"from": 104, "label": "meanpressure", "title": "http://example.com/date/2013-02-16 meanpressure 1008.0", "to": 163}, {"from": 20, "label": "humidity", "title": "http://example.com/date/2013-02-19 humidity 82.0", "to": 164}, {"from": 44, "label": "wind_speed", "title": "http://example.com/date/2013-03-04 wind_speed 5.5600000000000005", "to": 165}, {"from": 14, "label": "meanpressure", "title": "http://example.com/date/2013-03-08 meanpressure 1014.8333333333334", "to": 166}, {"from": 6, "label": "meantemp", "title": "http://example.com/date/2013-01-28 meantemp 14.833333333333334", "to": 167}, {"from": 2, "label": "meanpressure", "title": "http://example.com/date/2013-01-30 meanpressure 1017.8571428571428", "to": 168}, {"from": 28, "label": "meanpressure", "title": "http://example.com/date/2013-03-14 meanpressure 1013.1666666666666", "to": 169}, {"from": 84, "label": "meantemp", "title": "http://example.com/date/2013-03-06 meantemp 20.857142857142858", "to": 170}, {"from": 36, "label": "meanpressure", "title": "http://example.com/date/2013-03-03 meanpressure 1016.1666666666666", "to": 60}, {"from": 24, "label": "meantemp", "title": "http://example.com/date/2013-02-07 meantemp 15.6", "to": 69}, {"from": 55, "label": "meanpressure", "title": "http://example.com/date/2013-02-24 meanpressure 1018.8571428571428", "to": 171}, {"from": 149, "label": "meanpressure", "title": "http://example.com/date/2013-02-02 meanpressure 1017.1428571428572", "to": 93}, {"from": 22, "label": "humidity", "title": "http://example.com/date/2013-02-27 humidity 57.2", "to": 172}, {"from": 126, "label": "humidity", "title": "http://example.com/date/2013-02-25 humidity 72.875", "to": 173}, {"from": 59, "label": "humidity", "title": "http://example.com/date/2013-03-16 humidity 67.66666666666667", "to": 174}, {"from": 102, "label": "wind_speed", "title": "http://example.com/date/2013-02-01 wind_speed 2.22", "to": 175}, {"from": 121, "label": "meanpressure", "title": "http://example.com/date/2013-02-17 meanpressure 1012.6666666666666", "to": 176}, {"from": 104, "label": "wind_speed", "title": "http://example.com/date/2013-02-16 wind_speed 8.485714285714286", "to": 177}, {"from": 99, "label": "wind_speed", "title": "http://example.com/date/2013-01-27 wind_speed 5.557142857142857", "to": 178}, {"from": 24, "label": "meanpressure", "title": "http://example.com/date/2013-02-07 meanpressure 1018.6", "to": 179}, {"from": 134, "label": "meanpressure", "title": "http://example.com/date/2013-03-10 meanpressure 1008.0", "to": 163}, {"from": 121, "label": "humidity", "title": "http://example.com/date/2013-02-17 humidity 90.0", "to": 180}, {"from": 2, "label": "wind_speed", "title": "http://example.com/date/2013-01-30 wind_speed 1.0571428571428572", "to": 181}, {"from": 116, "label": "wind_speed", "title": "http://example.com/date/2013-02-28 wind_speed 12.957142857142856", "to": 182}, {"from": 32, "label": "meantemp", "title": "http://example.com/date/2013-01-29 meantemp 14.125", "to": 183}, {"from": 38, "label": "meantemp", "title": "http://example.com/date/2013-02-12 meantemp 15.333333333333334", "to": 184}, {"from": 87, "label": "meanpressure", "title": "http://example.com/date/2013-02-06 meanpressure 1018.6666666666666", "to": 185}, {"from": 12, "label": "wind_speed", "title": "http://example.com/date/2013-02-11 wind_speed 5.325", "to": 186}, {"from": 67, "label": "meanpressure", "title": "http://example.com/date/2013-02-14 meanpressure 1014.1666666666666", "to": 187}, {"from": 99, "label": "meanpressure", "title": "http://example.com/date/2013-01-27 meanpressure 1018.1428571428572", "to": 188}, {"from": 116, "label": "meanpressure", "title": "http://example.com/date/2013-02-28 meanpressure 1017.4285714285714", "to": 189}, {"from": 44, "label": "meantemp", "title": "http://example.com/date/2013-03-04 meantemp 17.6", "to": 190}, {"from": 42, "label": "meanpressure", "title": "http://example.com/date/2013-03-11 meanpressure 1011.1666666666666", "to": 191}, {"from": 126, "label": "wind_speed", "title": "http://example.com/date/2013-02-25 wind_speed 4.6375", "to": 192}, {"from": 10, "label": "meantemp", "title": "http://example.com/date/2013-02-22 meantemp 20.5", "to": 193}, {"from": 121, "label": "meantemp", "title": "http://example.com/date/2013-02-17 meantemp 13.666666666666666", "to": 194}, {"from": 42, "label": "wind_speed", "title": "http://example.com/date/2013-03-11 wind_speed 0.9333333333333332", "to": 195}, {"from": 99, "label": "meantemp", "title": "http://example.com/date/2013-01-27 meantemp 12.857142857142858", "to": 196}, {"from": 101, "label": "meantemp", "title": "http://example.com/date/2013-03-15 meantemp 24.166666666666668", "to": 156}, {"from": 32, "label": "wind_speed", "title": "http://example.com/date/2013-01-29 wind_speed 3.2375", "to": 197}, {"from": 67, "label": "humidity", "title": "http://example.com/date/2013-02-14 humidity 63.833333333333336", "to": 198}, {"from": 12, "label": "meanpressure", "title": "http://example.com/date/2013-02-11 meanpressure 1016.5", "to": 199}, {"from": 102, "label": "humidity", "title": "http://example.com/date/2013-02-01 humidity 73.0", "to": 200}, {"from": 101, "label": "humidity", "title": "http://example.com/date/2013-03-15 humidity 45.833333333333336", "to": 201}, {"from": 90, "label": "meantemp", "title": "http://example.com/date/2013-02-26 meantemp 17.857142857142858", "to": 202}, {"from": 134, "label": "wind_speed", "title": "http://example.com/date/2013-03-10 wind_speed 4.228571428571429", "to": 203}, {"from": 0, "label": "humidity", "title": "http://example.com/date/2013-01-26 humidity 64.16666666666667", "to": 204}, {"from": 2, "label": "humidity", "title": "http://example.com/date/2013-01-30 humidity 70.42857142857143", "to": 136}, {"from": 16, "label": "wind_speed", "title": "http://example.com/date/2013-02-20 wind_speed 5.814285714285715", "to": 205}, {"from": 46, "label": "wind_speed", "title": "http://example.com/date/2013-03-13 wind_speed 5.55", "to": 206}, {"from": 62, "label": "humidity", "title": "http://example.com/date/2013-03-05 humidity 61.875", "to": 207}, {"from": 30, "label": "meanpressure", "title": "http://example.com/date/2013-02-04 meanpressure 1014.5714285714286", "to": 208}, {"from": 20, "label": "wind_speed", "title": "http://example.com/date/2013-02-19 wind_speed 5.814285714285715", "to": 205}, {"from": 87, "label": "humidity", "title": "http://example.com/date/2013-02-06 humidity 71.33333333333333", "to": 209}, {"from": 76, "label": "meanpressure", "title": "http://example.com/date/2013-02-10 meanpressure 1017.125", "to": 210}, {"from": 12, "label": "humidity", "title": "http://example.com/date/2013-02-11 humidity 70.5", "to": 97}, {"from": 38, "label": "wind_speed", "title": "http://example.com/date/2013-02-12 wind_speed 7.416666666666667", "to": 211}, {"from": 50, "label": "humidity", "title": "http://example.com/date/2013-02-03 humidity 65.57142857142857", "to": 100}, {"from": 18, "label": "humidity", "title": "http://example.com/date/2013-03-02 humidity 54.0", "to": 212}, {"from": 90, "label": "humidity", "title": "http://example.com/date/2013-02-26 humidity 70.0", "to": 213}, {"from": 10, "label": "wind_speed", "title": "http://example.com/date/2013-02-22 wind_speed 10.875000000000002", "to": 214}, {"from": 149, "label": "meantemp", "title": "http://example.com/date/2013-02-02 meantemp 16.285714285714285", "to": 65}, {"from": 92, "label": "meantemp", "title": "http://example.com/date/2013-02-08 meantemp 14.0", "to": 215}, {"from": 149, "label": "humidity", "title": "http://example.com/date/2013-02-02 humidity 77.57142857142857", "to": 216}, {"from": 28, "label": "humidity", "title": "http://example.com/date/2013-03-14 humidity 61.16666666666666", "to": 217}, {"from": 32, "label": "humidity", "title": "http://example.com/date/2013-01-29 humidity 65.5", "to": 218}, {"from": 73, "label": "wind_speed", "title": "http://example.com/date/2013-02-05 wind_speed 9.725", "to": 219}, {"from": 26, "label": "meantemp", "title": "http://example.com/date/2013-02-09 meantemp 15.428571428571429", "to": 220}, {"from": 38, "label": "humidity", "title": "http://example.com/date/2013-02-12 humidity 70.33333333333333", "to": 221}, {"from": 104, "label": "meantemp", "title": "http://example.com/date/2013-02-16 meantemp 14.428571428571429", "to": 222}, {"from": 107, "label": "humidity", "title": "http://example.com/date/2013-03-07 humidity 57.142857142857146", "to": 223}, {"from": 94, "label": "humidity", "title": "http://example.com/date/2013-02-15 humidity 65.33333333333333", "to": 224}, {"from": 34, "label": "meanpressure", "title": "http://example.com/date/2013-02-23 meanpressure 1017.0", "to": 83}, {"from": 71, "label": "meanpressure", "title": "http://example.com/date/2013-03-01 meanpressure 1016.3333333333334", "to": 225}, {"from": 101, "label": "wind_speed", "title": "http://example.com/date/2013-03-15 wind_speed 7.716666666666668", "to": 226}, {"from": 34, "label": "meantemp", "title": "http://example.com/date/2013-02-23 meantemp 17.428571428571427", "to": 31}, {"from": 107, "label": "meanpressure", "title": "http://example.com/date/2013-03-07 meanpressure 1015.2857142857144", "to": 159}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.01,
+            "damping": 0.4,
+            "gravitationalConstant": -50,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,9 @@
+[global]
+developmentMode = false
+
+[server]
+runOnSave = false
+enableStaticServing = false
+
+[browser]
+serverAddress = "localhost"

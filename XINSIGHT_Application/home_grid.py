@@ -46,6 +46,26 @@ st.set_page_config(page_title="IDEAS XInsight", layout="wide", page_icon=logo_pa
 
 hide_streamlit_style = """
     <style>
+    /* ============================================
+#        HIDE STREAMLIT BRANDING & TOOLBAR
+#        ============================================ */
+#     #MainMenu {visibility: hidden !important;}
+#     header[data-testid="stHeader"] {visibility: hidden !important;}
+#     footer {visibility: hidden !important;}
+    
+#     [data-testid="stToolbar"] {display: none !important;}
+#     [data-testid="stDecoration"] {display: none !important;}
+#     [data-testid="stStatusWidget"] {display: none !important;}
+#     .stDeployButton {display: none !important;}
+#     button[kind="header"][data-testid="baseButton-header"] {display: none !important;}
+    
+#     /* Hide skeleton loading boxes */
+#     [data-testid="stSkeleton"] {
+#         display: none !important;
+#         visibility: hidden !important;
+#         opacity: 0 !important;
+#         height: 0 !important;
+#     }
     /* 1. Global Background Gradient - REMOVED to restore white background */
     /* .stApp {
         background-color: #8EC5FC;
